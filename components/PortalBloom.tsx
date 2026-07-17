@@ -2,8 +2,10 @@
 
 import { motion, type TargetAndTransition, type Transition } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { mulberry32, rand, randInt } from "@/lib/random";
+import { mulberry32, rand, randInt, pick } from "@/lib/random";
 import FlowerHead, { BOUQUET_SPECIES, type FlowerSpecies } from "./art/FlowerHead";
+import Petal from "./art/Petal";
+import Butterfly from "./art/Butterfly";
 import { experienceContent } from "@/lib/content";
 
 interface PortalBloomProps {
@@ -31,7 +33,8 @@ export default function PortalBloom({ reduced = false, onSfx, onFinished }: Port
     const rng = mulberry32(88);
     const { w, h } = dims;
     // tile the whole viewport (with overscan) so flowers fill edge-to-edge & overlap
-    const cell = isMobile ? 132 : 178;
+    // (mobile: fewer but bigger blooms — same lush coverage, far less work)
+    const cell = isMobile ? 152 : 178;
     const cols = Math.ceil(w / cell) + 3;
     const rows = Math.ceil(h / cell) + 3;
     const cx = w / 2;
@@ -46,6 +49,7 @@ export default function PortalBloom({ reduced = false, onSfx, onFinished }: Port
         const dist = Math.hypot(gx, gy);
         const angle = Math.atan2(gy, gx);
         const curl = Math.min(dist * 0.45, 260);
+        const size = rand(rng, isMobile ? 170 : 230, isMobile ? 280 : 380);
         list.push({
           id: idx++,
           tx: gx,
@@ -53,16 +57,19 @@ export default function PortalBloom({ reduced = false, onSfx, onFinished }: Port
           midX: gx * 0.45 + Math.cos(angle + Math.PI / 2) * curl,
           midY: gy * 0.45 + Math.sin(angle + Math.PI / 2) * curl,
           dist,
-          size: rand(rng, isMobile ? 150 : 230, isMobile ? 250 : 380),
+          size,
           species: BOUQUET_SPECIES[randInt(rng, 0, BOUQUET_SPECIES.length - 1)] as FlowerSpecies,
           seed: 1000 + idx * 7,
           spin: rand(rng, -160, 160),
           swayAmp: rand(rng, 4, 10),
           swayDur: rand(rng, 4, 7),
+          // a breeze ripples outward from the centre of the field
+          swayDelay: (dist % 640) / 640 * 1.4,
           fallDelay: rand(rng, 0, 0.6),
           fallDur: rand(rng, 1.7, 2.8),
           fallSway: rand(rng, -80, 80),
-          z: randInt(rng, 1, 999),
+          // bigger blooms sit in front — real bouquet depth
+          z: Math.round(size),
           emitDelay: 0,
         });
       }
@@ -76,6 +83,30 @@ export default function PortalBloom({ reduced = false, onSfx, onFinished }: Port
     return list;
   }, [dims, isMobile, reduced]);
 
+  // ambient life drifting over the flower field: petals & butterflies
+  const ambient = useMemo(() => {
+    const rng = mulberry32(777);
+    const petals = Array.from({ length: isMobile ? 6 : 14 }, (_, i) => ({
+      id: i,
+      x: rand(rng, 0, 100),
+      size: rand(rng, 16, 30),
+      dur: rand(rng, 9, 16),
+      delay: rand(rng, 0, 7),
+      sway: rand(rng, 30, 80),
+      spin: rand(rng, 160, 420) * (rng() > 0.5 ? 1 : -1),
+      colors: pick(rng, [
+        ["#f3cfcb", "#e9aaa3"],
+        ["#f9e5e3", "#f3cfcb"],
+        ["#efdcae", "#e3c583"],
+      ] as [string, string][]),
+    }));
+    const butterflies = [
+      { id: 0, y: 24, size: 44, dur: 13, delay: 1.5, dir: 1, color: "#dd857c" },
+      { id: 1, y: 60, size: 34, dur: 17, delay: 4.5, dir: -1, color: "#d2a959" },
+    ].slice(0, isMobile ? 1 : 2);
+    return { petals, butterflies };
+  }, [isMobile]);
+
   const tap = () => {
     if (stage !== "idle") return;
     onSfx?.("paper");
@@ -84,7 +115,7 @@ export default function PortalBloom({ reduced = false, onSfx, onFinished }: Port
     const maxEmit = flowers.reduce((m, f) => Math.max(m, f.emitDelay), 0);
     const bloomMs = reduced ? 600 : maxEmit * 1000 + 1500;
     setTimeout(() => setStage("full"), bloomMs);
-    const holdMs = reduced ? 300 : 1600;
+    const holdMs = reduced ? 300 : 2600;
     setTimeout(() => {
       onSfx?.("petal");
       setStage("fall");
@@ -164,14 +195,17 @@ export default function PortalBloom({ reduced = false, onSfx, onFinished }: Port
             };
             transition = { duration: reduced ? 0.5 : 1.4, delay: f.emitDelay, ease: [0.16, 0.8, 0.3, 1], times: [0, 0.6, 1] };
           } else if (stage === "full") {
+            // desktop: petals breathe inside the FlowerHead itself (SVG CSS);
+            // mobile: breathe at the div level instead — GPU-composited, no
+            // per-frame SVG repaints. Both ride a breeze rippling outward.
             animate = {
               x: f.tx,
               y: f.ty,
-              scale: [1, 1.05, 1],
+              scale: isMobile ? [1, 1.05, 1] : 1,
               rotate: [f.spin, f.spin + f.swayAmp, f.spin - f.swayAmp, f.spin],
               opacity: 1,
             };
-            transition = { duration: f.swayDur, repeat: Infinity, ease: "easeInOut" };
+            transition = { duration: f.swayDur, delay: f.swayDelay, repeat: Infinity, ease: "easeInOut" };
           } else {
             animate = {
               x: f.tx + f.fallSway,
@@ -191,10 +225,70 @@ export default function PortalBloom({ reduced = false, onSfx, onFinished }: Port
               animate={animate}
               transition={transition}
             >
-              <FlowerHead species={f.species} seed={f.seed} size={f.size} />
+              <FlowerHead species={f.species} seed={f.seed} size={f.size} alive={!reduced && !isMobile} />
             </motion.div>
           );
         })}
+
+      {/* petals & butterflies drifting over the field */}
+      {stage !== "idle" && !reduced && (
+        <motion.div
+          className="pointer-events-none absolute inset-0 z-[1050] overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, delay: 0.8 }}
+        >
+          {ambient.petals.map((p) => (
+            <motion.div
+              key={`ap${p.id}`}
+              className="absolute will-transform"
+              style={{ left: `${p.x}%`, top: -40 }}
+              animate={{
+                y: ["-6vh", "108vh"],
+                x: [0, p.sway, -p.sway * 0.6, 0],
+                rotate: [0, p.spin],
+                opacity: [0, 0.9, 0.9, 0],
+              }}
+              transition={{ duration: p.dur, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Petal size={p.size} color={p.colors[0]} edge={p.colors[1]} />
+            </motion.div>
+          ))}
+          {ambient.butterflies.map((b) => (
+            <motion.div
+              key={`ab${b.id}`}
+              className="absolute"
+              style={{ top: `${b.y}%` }}
+              initial={{ x: b.dir === 1 ? "-12vw" : "112vw" }}
+              animate={{ x: b.dir === 1 ? "112vw" : "-12vw", y: [0, -36, 18, -26, 0] }}
+              transition={{
+                x: { duration: b.dur, delay: b.delay, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" },
+                y: { duration: b.dur / 4, repeat: Infinity, ease: "easeInOut" },
+              }}
+            >
+              <div style={{ transform: b.dir === 1 ? "none" : "scaleX(-1)" }}>
+                <Butterfly seed={b.id + 3} size={b.size} color={b.color} />
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+
+      {/* soft sunlight drifting across the blooms (desktop only — the
+          animated blend layer is too costly on phone GPUs) */}
+      {stage !== "idle" && !reduced && !isMobile && (
+        <motion.div
+          className="pointer-events-none absolute z-[1080]"
+          style={{
+            inset: "-20%",
+            background:
+              "radial-gradient(46% 38% at 38% 32%, rgba(255,244,206,0.5), transparent 70%)",
+            mixBlendMode: "soft-light",
+          }}
+          animate={{ x: ["-6%", "7%", "-6%"], y: ["-5%", "6%", "-5%"] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
 
       {/* oil-canvas paint texture unifying the flower field */}
       {stage !== "idle" && (

@@ -86,7 +86,7 @@ export default function FinalQuestion({ reduced = false, onSfx }: FinalQuestionP
         )}
       </AnimatePresence>
 
-      <div className="relative z-10 w-[min(92vw,620px)]">
+      <div className="relative z-10 w-full max-w-[620px]">
         <AnimatePresence mode="wait">
           {!said ? (
             <motion.div

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useAnimationControls } from "framer-motion";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { mulberry32, rand } from "@/lib/random";
 import { experienceContent } from "@/lib/content";
 import BotanicalWallpaper from "./BotanicalWallpaper";
@@ -50,6 +50,16 @@ export default function LockScreen({ reduced = false, onUnlock, onInteract }: Lo
   const H = 560;
   const path = useMemo(() => tornPaperPath(42, W, H), []);
 
+  // shrink the card uniformly on short phone screens so nothing is cut off
+  const [vh, setVh] = useState(800);
+  useEffect(() => {
+    const on = () => setVh(window.innerHeight);
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  const fit = Math.min(1, (vh - 32) / 660);
+
   const press = useCallback(
     (digit: string) => {
       if (unlocked || entry.length >= codeLen) return;
@@ -95,9 +105,10 @@ export default function LockScreen({ reduced = false, onUnlock, onInteract }: Lo
     >
       <BotanicalWallpaper faded />
 
+      <div style={{ transform: `scale(${fit})`, transformOrigin: "center" }}>
       <motion.div
         className="relative"
-        style={{ width: W, maxWidth: "86vw" }}
+        style={{ width: W, maxWidth: "88vw" }}
         animate={controls}
       >
         {/* torn paper card */}
@@ -164,7 +175,7 @@ export default function LockScreen({ reduced = false, onUnlock, onInteract }: Lo
           </div>
 
           {/* number pad */}
-          <div className="mt-8 grid grid-cols-3 gap-x-8 gap-y-6">
+          <div className="mt-8 grid grid-cols-3 gap-x-6 gap-y-4">
             {pad.map((k, i) =>
               k === "" ? (
                 <span key={i} />
@@ -174,7 +185,7 @@ export default function LockScreen({ reduced = false, onUnlock, onInteract }: Lo
                   type="button"
                   onClick={del}
                   aria-label="Delete"
-                  className="flex h-12 w-12 items-center justify-center rounded-full transition active:scale-90"
+                  className="flex h-14 w-14 items-center justify-center rounded-full transition active:scale-90"
                   style={{ color: INK }}
                 >
                   <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth={1.5}>
@@ -188,7 +199,7 @@ export default function LockScreen({ reduced = false, onUnlock, onInteract }: Lo
                   type="button"
                   onClick={() => press(k)}
                   whileTap={{ scale: 0.85 }}
-                  className="flex h-12 w-12 items-center justify-center rounded-full font-serif text-2xl transition hover:bg-[rgba(47,93,63,0.08)]"
+                  className="flex h-14 w-14 items-center justify-center rounded-full font-serif text-2xl transition hover:bg-[rgba(47,93,63,0.08)]"
                   style={{ color: INK }}
                 >
                   {k}
@@ -198,6 +209,7 @@ export default function LockScreen({ reduced = false, onUnlock, onInteract }: Lo
           </div>
         </div>
       </motion.div>
+      </div>
     </motion.div>
   );
 }

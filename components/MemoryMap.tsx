@@ -49,7 +49,7 @@ export default function MemoryMap({ reduced = false, onSfx }: MemoryMapProps) {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.2 }}
-        className="mx-auto w-[min(94vw,720px)]"
+        className="mx-auto w-full max-w-[720px]"
         style={{ filter: "drop-shadow(0 20px 40px rgba(90,64,51,0.26))" }}
       >
         <CrumplePaper seed={55} tone="aged" rounded="rounded-[14px]">
@@ -138,7 +138,7 @@ export default function MemoryMap({ reduced = false, onSfx }: MemoryMapProps) {
             <div className="absolute inset-0 bg-ink-600/45 backdrop-blur-sm" />
             <motion.div
               key={active}
-              className="relative w-[min(90vw,400px)]"
+              className="relative w-full max-w-[400px]"
               initial={{ opacity: 0, y: 40, scale: 0.9, rotate: 2 }}
               animate={{ opacity: 1, y: 0, scale: 1, rotate: 1.5 }}
               exit={{ opacity: 0, y: 30, scale: 0.92 }}

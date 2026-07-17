@@ -105,11 +105,11 @@ export default function Journey({ reduced = false, onReachFinale, density = 1, o
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }} className="font-body text-xs uppercase tracking-[0.4em] text-forest-500/70">
             a little gift
           </motion.p>
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.6, delay: 0.2 }} className="mt-2 font-script text-7xl text-wine-500 sm:text-8xl">
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.6, delay: 0.2 }} className="mt-2 font-script text-[clamp(3rem,15vw,4.5rem)] leading-tight text-wine-500 sm:text-8xl">
             For {giftTo}
           </motion.h1>
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.4, delay: 0.6 }} className="mt-6">
-            <FlowerHead species="peony" seed={8} size={78} painterly />
+            <FlowerHead species="peony" seed={8} size={78} painterly alive={!reduced} />
           </motion.div>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.9 }} className="mt-5 font-script text-2xl text-forest-500">
             from {giftFrom}
@@ -129,7 +129,7 @@ export default function Journey({ reduced = false, onReachFinale, density = 1, o
             whileInView={{ opacity: 1, y: 0, rotate: -1.2 }}
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="w-[min(90vw,520px)]"
+            className="w-full max-w-[520px]"
             style={{ filter: "drop-shadow(0 18px 34px rgba(90,64,51,0.28))" }}
           >
             <CrumplePaper seed={2} tone="cream" rounded="rounded-[10px]">
@@ -193,7 +193,7 @@ export default function Journey({ reduced = false, onReachFinale, density = 1, o
               if (p.kind === "note") {
                 return (
                   <div key={`n${i}`} className="my-6 w-full">
-                    <div className="mx-auto w-[min(78vw,380px)]">
+                    <div className="mx-auto w-full max-w-[380px]">
                       <CrumpledLetter text={p.text} seed={i + 30} rotate={p.rotate} reduced={reduced} compact />
                     </div>
                   </div>
@@ -232,15 +232,15 @@ export default function Journey({ reduced = false, onReachFinale, density = 1, o
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.12 }}
             transition={{ duration: 1 }}
-            className="w-[min(94vw,720px)]"
+            className="w-full max-w-[720px]"
             style={{ filter: "drop-shadow(0 26px 50px rgba(90,64,51,0.3))" }}
           >
             <CrumplePaper seed={17} tone="cream" rounded="rounded-[14px]">
               <div className="px-7 py-12 sm:px-16 sm:py-20">
                 <div className="mb-6 flex justify-center gap-2">
-                  <FlowerHead species="rose" seed={31} size={54} painterly />
-                  <FlowerHead species="hydrangea" seed={5} size={48} painterly />
-                  <FlowerHead species="daisy" seed={4} size={44} painterly />
+                  <FlowerHead species="rose" seed={31} size={54} painterly alive={!reduced} />
+                  <FlowerHead species="hydrangea" seed={5} size={48} painterly alive={!reduced} />
+                  <FlowerHead species="daisy" seed={4} size={44} painterly alive={!reduced} />
                 </div>
                 <motion.p variants={ink} initial="hidden" whileInView="show" viewport={{ once: true }} className="text-center font-body text-xs uppercase tracking-[0.3em] text-forest-500/60">
                   {bigLetterTitle}
@@ -265,7 +265,7 @@ export default function Journey({ reduced = false, onReachFinale, density = 1, o
 
         {/* ---- voice note ---- */}
         <section className="mt-16 flex justify-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="w-[min(92vw,460px)]">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="w-full max-w-[460px]">
             <VoiceNote reduced={reduced} onActiveChange={onVoiceActiveChange} />
           </motion.div>
         </section>

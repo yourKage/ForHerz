@@ -62,7 +62,7 @@ export default function ReasonsDeck({ reduced = false, onSfx }: ReasonsDeckProps
       </div>
 
       <div className="flex flex-col items-center">
-        <div className="relative h-[340px] w-[min(90vw,380px)] sm:h-[300px]">
+        <div className="relative h-[340px] w-full max-w-[380px] sm:h-[300px]">
           {/* static cards peeking behind the deck */}
           {[2, 1].map((offset) => (
             <div

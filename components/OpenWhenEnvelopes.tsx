@@ -155,7 +155,7 @@ export default function OpenWhenEnvelopes({ reduced = false, onSfx }: OpenWhenEn
             <div className="absolute inset-0 bg-ink-600/45 backdrop-blur-sm" />
             <motion.div
               key={active}
-              className="relative w-[min(92vw,480px)]"
+              className="relative w-full max-w-[480px]"
               initial={{ opacity: 0, y: 40, scale: 0.9, rotate: -1.5 }}
               animate={{ opacity: 1, y: 0, scale: 1, rotate: -1 }}
               exit={{ opacity: 0, y: 30, scale: 0.92 }}

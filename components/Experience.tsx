@@ -69,7 +69,13 @@ export default function Experience() {
     <main className="relative h-[100dvh] w-full overflow-hidden bg-cream-100 font-body text-ink-500">
       {/* sound control (hidden on the lock screen) */}
       {phase !== "lock" && (
-        <div className="absolute right-4 top-4 z-[80] flex gap-2">
+        <div
+          className="absolute z-[80] flex gap-2"
+          style={{
+            top: "calc(env(safe-area-inset-top, 0px) + 0.875rem)",
+            right: "calc(env(safe-area-inset-right, 0px) + 0.875rem)",
+          }}
+        >
           <button
             type="button"
             onClick={toggleMute}
@@ -136,7 +142,8 @@ export default function Experience() {
         {musicOn && phase === "journey" && (
           <motion.div
             key="music"
-            className="pointer-events-none fixed bottom-5 left-1/2 z-[75] -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0"
+            className="pointer-events-none fixed left-1/2 z-[75] -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0"
+            style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1.25rem)" }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}

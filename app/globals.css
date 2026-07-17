@@ -59,6 +59,26 @@ body.experience-locked {
   }
 }
 
+/* Living flowers: petal rings breathe, whole heads sway (transform-only). */
+@keyframes bloom-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+@keyframes bloom-sway {
+  0%,
+  100% {
+    transform: rotate(-1.8deg);
+  }
+  50% {
+    transform: rotate(1.8deg);
+  }
+}
+
 /* Elegant thin scrollbar for the letter */
 .fancy-scroll::-webkit-scrollbar {
   width: 8px;

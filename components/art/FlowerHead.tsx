@@ -30,6 +30,8 @@ interface FlowerHeadProps {
   style?: React.CSSProperties;
   /** hand-painted oil look (wobbly edges + canvas texture). Use sparingly. */
   painterly?: boolean;
+  /** the flower gently breathes & sways from within (CSS, transform-only) */
+  alive?: boolean;
 }
 
 interface ColorSet {
@@ -74,32 +76,74 @@ function petal(len: number, width: number, tip: "round" | "point" | "notch"): st
 function ringPetals(
   count: number, len: number, width: number, tip: "round" | "point" | "notch",
   fill: string, stroke: string, scale: number, offset: number, rng: Rng, keyPrefix: string,
+  veins?: { hi: string; lo: string },
 ) {
   return Array.from({ length: count }).map((_, i) => {
     const angle = r2((i / count) * 360 + offset);
     const jl = len * rand(rng, 0.92, 1.08);
     const jw = width * rand(rng, 0.9, 1.1);
     return (
-      <path
-        key={`${keyPrefix}-${i}`}
-        d={petal(jl, jw, tip)}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={0.5}
-        transform={`rotate(${angle}) scale(${r2(scale)})`}
-        style={{ transformOrigin: "0 0" }}
-      />
+      <g key={`${keyPrefix}-${i}`} transform={`rotate(${angle}) scale(${r2(scale)})`}>
+        <path d={petal(jl, jw, tip)} fill={fill} stroke={stroke} strokeWidth={0.5} />
+        {veins && (
+          <>
+            {/* central highlight vein */}
+            <path
+              d={`M0 ${r2(-jl * 0.1)} C ${r2(jw * 0.08)} ${r2(-jl * 0.38)}, ${r2(-jw * 0.06)} ${r2(-jl * 0.62)}, 0 ${r2(-jl * 0.85)}`}
+              fill="none" stroke={veins.hi} strokeWidth={0.9} strokeLinecap="round" opacity={0.4}
+            />
+            {/* soft side veins on wide petals */}
+            {jw > 8 && (
+              <>
+                <path
+                  d={`M0 ${r2(-jl * 0.16)} C ${r2(jw * 0.3)} ${r2(-jl * 0.38)}, ${r2(jw * 0.34)} ${r2(-jl * 0.6)}, ${r2(jw * 0.22)} ${r2(-jl * 0.74)}`}
+                  fill="none" stroke={veins.lo} strokeWidth={0.5} strokeLinecap="round" opacity={0.26}
+                />
+                <path
+                  d={`M0 ${r2(-jl * 0.16)} C ${r2(-jw * 0.3)} ${r2(-jl * 0.38)}, ${r2(-jw * 0.34)} ${r2(-jl * 0.6)}, ${r2(-jw * 0.22)} ${r2(-jl * 0.74)}`}
+                  fill="none" stroke={veins.lo} strokeWidth={0.5} strokeLinecap="round" opacity={0.26}
+                />
+              </>
+            )}
+          </>
+        )}
+      </g>
     );
   });
 }
 
-export default function FlowerHead({ species, seed = 1, size = 90, className, style, painterly = false }: FlowerHeadProps) {
+export default function FlowerHead({ species, seed = 1, size = 90, className, style, painterly = false, alive = false }: FlowerHeadProps) {
   const rng = mulberry32(seed * 2654435761);
   const c = COLORS[species];
   const uid = `${species}-${seed}`;
   const spin = r2(rand(rng, 0, 360));
   const gradId = `grad-${uid}`, ctrId = `ctr-${uid}`, softId = `soft-${uid}`, hiId = `hi-${uid}`;
   const paintId = `paint-${uid}`, texId = `tex-${uid}`;
+  const veins = { hi: "#ffffff", lo: c.deep };
+
+  // gentle life: rings breathe, the whole head sways — transform-only CSS,
+  // desynchronised per flower & per ring via seeded negative delays.
+  // Ring breathing is skipped for painterly flowers: animating inside an
+  // feTurbulence filter would re-run the filter every frame (very slow).
+  const aliveStyle = (i: number, kind: "breathe" | "sway"): React.CSSProperties | undefined =>
+    alive && !(painterly && kind === "breathe")
+      ? {
+          animation: `bloom-${kind} ${r2(kind === "sway" ? 4.6 + ((seed * 3) % 8) * 0.45 : 3.3 + ((seed * 13) % 9) * 0.28)}s ease-in-out infinite`,
+          animationDelay: `${r2(-(((seed * 7 + i * 5) % 24) * 0.37))}s`,
+          transformBox: "view-box",
+          transformOrigin: "50% 50%",
+        }
+      : undefined;
+
+  // whole-head sway lives on the root <svg> (an HTML-level box) so the
+  // browser composites it on the GPU instead of repainting the SVG
+  const swayStyle: React.CSSProperties | undefined = alive
+    ? {
+        animation: `bloom-sway ${r2(4.6 + ((seed * 3) % 8) * 0.45)}s ease-in-out infinite`,
+        animationDelay: `${r2(-(((seed * 7) % 24) * 0.37))}s`,
+        willChange: "transform",
+      }
+    : undefined;
 
   const defs = (
     <defs>
@@ -141,7 +185,7 @@ export default function FlowerHead({ species, seed = 1, size = 90, className, st
   if (species === "hydrangea") {
     const rngc = mulberry32(seed * 40503 + 7);
     content = (
-      <g>
+      <g style={aliveStyle(1, "breathe")}>
         {Array.from({ length: 11 }).map((_, i) => {
           const a = rand(rngc, 0, Math.PI * 2);
           const rad = i === 0 ? 0 : rand(rngc, 10, 32);
@@ -184,9 +228,13 @@ export default function FlowerHead({ species, seed = 1, size = 90, className, st
     ];
     content = (
       <g>
+        {/* darker back petals peeking out for depth */}
+        <g opacity={0.5}>
+          {ringPetals(9, 45, 18, "round", c.deep, c.deep, 1, 30, rng, "roseback")}
+        </g>
         {rings.map((ring, ri) => (
-          <g key={ri}>
-            {ringPetals(ring.n, ring.len, ring.w, "round", `url(#${gradId})`, c.deep, ring.s, ri * 22 + 10, rng, `rose${ri}`)}
+          <g key={ri} style={aliveStyle(ri + 1, "breathe")}>
+            {ringPetals(ring.n, ring.len, ring.w, "round", `url(#${gradId})`, c.deep, ring.s, ri * 22 + 10, rng, `rose${ri}`, veins)}
           </g>
         ))}
         {/* spiral bud */}
@@ -200,12 +248,16 @@ export default function FlowerHead({ species, seed = 1, size = 90, className, st
     const stands = [30, 150, 270];
     content = (
       <g>
-        {falls.map((a, i) => (
-          <path key={`f${i}`} d={petal(44, 20, "round")} fill={`url(#${gradId})`} stroke={c.deep} strokeWidth={0.5} transform={`rotate(${a}) scale(1)`} style={{ transformOrigin: "0 0" }} />
-        ))}
-        {stands.map((a, i) => (
-          <path key={`s${i}`} d={petal(34, 15, "point")} fill={c.mid} stroke={c.deep} strokeWidth={0.5} transform={`rotate(${a}) scale(0.9)`} style={{ transformOrigin: "0 0" }} opacity={0.92} />
-        ))}
+        <g style={aliveStyle(1, "breathe")}>
+          {falls.map((a, i) => (
+            <path key={`f${i}`} d={petal(44, 20, "round")} fill={`url(#${gradId})`} stroke={c.deep} strokeWidth={0.5} transform={`rotate(${a}) scale(1)`} style={{ transformOrigin: "0 0" }} />
+          ))}
+        </g>
+        <g style={aliveStyle(2, "breathe")}>
+          {stands.map((a, i) => (
+            <path key={`s${i}`} d={petal(34, 15, "point")} fill={c.mid} stroke={c.deep} strokeWidth={0.5} transform={`rotate(${a}) scale(0.9)`} style={{ transformOrigin: "0 0" }} opacity={0.92} />
+          ))}
+        </g>
         {falls.map((a, i) => (
           <line key={`b${i}`} x1={0} y1={0} x2={r2(Math.cos(((a - 90) * Math.PI) / 180) * 22)} y2={r2(Math.sin(((a - 90) * Math.PI) / 180) * 22)} stroke={c.center} strokeWidth={3} strokeLinecap="round" opacity={0.85} />
         ))}
@@ -229,11 +281,16 @@ export default function FlowerHead({ species, seed = 1, size = 90, className, st
       magnolia: { rings: [{ n: 6, len: 44, w: 20, tip: "round" }, { n: 6, len: 34, w: 18, tip: "round" }], ctr: 6, ctrDots: 8 },
     };
     const cfg = config[species as keyof typeof config];
+    const back = cfg.rings[0];
     content = (
       <g>
+        {/* darker back petals peeking out between the front ones — depth */}
+        <g opacity={0.45}>
+          {ringPetals(back.n, back.len * 1.12, back.w * 1.05, back.tip, c.deep, c.deep, 1, 8 + 180 / back.n, rng, "back")}
+        </g>
         {cfg.rings.map((ring, ri) => (
-          <g key={ri}>
-            {ringPetals(ring.n, ring.len, ring.w, ring.tip, `url(#${gradId})`, c.deep, 1, ri * (180 / (ring.n || 1)) + 8, rng, `r${ri}`)}
+          <g key={ri} style={aliveStyle(ri + 1, "breathe")}>
+            {ringPetals(ring.n, ring.len, ring.w, ring.tip, `url(#${gradId})`, c.deep, 1, ri * (180 / (ring.n || 1)) + 8, rng, `r${ri}`, veins)}
           </g>
         ))}
         <circle r={cfg.ctr} fill={`url(#${ctrId})`} stroke={c.centerDeep} strokeWidth={0.5} />
@@ -244,12 +301,29 @@ export default function FlowerHead({ species, seed = 1, size = 90, className, st
               return <circle key={i} cx={r2(Math.cos(ang) * rr)} cy={r2(Math.sin(ang) * rr)} r={r2(rand(rng, 0.8, 1.6))} fill={c.centerDeep} opacity={0.85} />;
             })
           : null}
+        {/* real lily stamens — curved filaments with dark anthers */}
+        {species === "lily" && (
+          <g style={aliveStyle(4, "breathe")}>
+            {[15, 75, 135, 195, 255, 315].map((a) => {
+              const rad = (a * Math.PI) / 180;
+              const fx = r2(Math.cos(rad) * 21), fy = r2(Math.sin(rad) * 21);
+              const mx = r2(Math.cos(rad) * 10 + Math.sin(rad) * 3.5);
+              const my = r2(Math.sin(rad) * 10 - Math.cos(rad) * 3.5);
+              return (
+                <g key={a}>
+                  <path d={`M0 0 Q ${mx} ${my} ${fx} ${fy}`} fill="none" stroke="#e6d3a0" strokeWidth={1.1} strokeLinecap="round" />
+                  <ellipse cx={fx} cy={fy} rx={3.4} ry={1.5} fill="#6d3420" transform={`rotate(${a} ${fx} ${fy})`} />
+                </g>
+              );
+            })}
+          </g>
+        )}
       </g>
     );
   }
 
   return (
-    <svg viewBox="-52 -52 104 104" width={size} height={size} className={className} style={{ overflow: "visible", ...style }}>
+    <svg viewBox="-52 -52 104 104" width={size} height={size} className={className} style={{ overflow: "visible", ...swayStyle, ...style }}>
       {defs}
       <circle r={46} fill={`url(#${softId})`} />
       <g transform={`rotate(${spin})`} filter={painterly ? `url(#${paintId})` : undefined}>{content}</g>

@@ -48,7 +48,7 @@ export default function Keepsake({ reduced = false, onSfx }: KeepsakeProps) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.9 }}
-        className="w-[min(92vw,480px)]"
+        className="w-full max-w-[480px]"
         style={{ filter: "drop-shadow(0 20px 40px rgba(90,64,51,0.26))" }}
       >
         <CrumplePaper seed={95} tone="cream" rounded="rounded-[14px]">

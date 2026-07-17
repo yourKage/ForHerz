@@ -10,3 +10,6 @@ next-env.d.ts
 .vercel
 *.tsbuildinfo
 .claude
+
+.vercel
+.env*
