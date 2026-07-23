@@ -17,7 +17,7 @@ template — drop in your own words and media, then deploy.
 You need **[Node.js](https://nodejs.org) 18.18+** (20+ recommended) and git.
 
 ```bash
-git clone (https://github.com/yourKage/ForHerz)
+git clone https://github.com/yourKage/ForHerz
 cd romantic-letter
 
 npm install        # install dependencies
