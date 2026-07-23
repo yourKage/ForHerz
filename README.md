@@ -1,67 +1,150 @@
-# A Letter for You 💌
+# A Romantic Letter 💌
 
-A premium, cinematic interactive romantic letter experience — locked with a
-little passcode, opened with a garden that blooms out of an envelope, and told
-through scratch-off photos of her and two handwritten letters.
+A premium, cinematic, interactive romantic letter — locked with a passcode,
+opened by a garden that blooms out of an envelope, and told through scratch-off
+photos, two handwritten letters, a voice note, a music player, an "our story"
+timeline, "open when…" envelopes, a reasons deck, a memory map and a final
+question.
+
+All the personal words in this repo are **placeholder sample text**, and there
+are **no photos, voice notes, music, or secrets committed**. It's a blank
+template — drop in your own words and media, then deploy.
+
+---
+
+## 1. Install & run locally
+
+You need **[Node.js](https://nodejs.org) 18.18+** (20+ recommended) and git.
+
+```bash
+git clone <your-repo-url>
+cd romantic-letter
+
+npm install        # install dependencies
+npm run dev        # dev server at http://localhost:3000
+```
+
+> **Windows PowerShell:** if `npm` misbehaves, use `npm.cmd` (e.g. `npm.cmd install`).
+
+Other commands:
+
+```bash
+npm run build      # production build
+npm start          # serve the production build
+```
+
+**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS ·
+Framer Motion. Ambient sound is procedural (Web Audio API), so it works even
+with no audio files.
+
+---
+
+## 2. Make it yours
+
+Everything human-facing lives in a few files. Edit these:
+
+| What | File |
+|------|------|
+| Passcode, all letters, notes, reasons, countdown, final question | [`lib/content.ts`](lib/content.ts) |
+| "Our Story" timeline chapters | [`lib/story.ts`](lib/story.ts) |
+| Photo gallery captions & order | [`lib/gallery.ts`](lib/gallery.ts) |
+
+### The passcode 🔑
+
+Default is **`1121`**. Change `lockCode` in `lib/content.ts` to a date or number
+that means something (e.g. `"21102025"`).
+
+### Your photos 🖼️
+
+Drop images into **`public/pics/`** named `img1.jpg`, `img2.jpg`, … Then point
+each gallery entry's `src` at them in `lib/gallery.ts` (and the memory-map pins in
+`lib/content.ts`). `.jpg` and `.png` both work.
+
+### Your music 🎵
+
+Drop MP3s into **`public/music/`** (see [`public/music/README.txt`](public/music/README.txt))
+and update `music` / `playlist` in `lib/content.ts` with the filenames, titles
+and artists.
+
+### Your voice note 🎙️
+
+Record a short clip, save it as **`public/voice/note.mp3`**. Update the `voice`
+block in `lib/content.ts` if you rename it.
+
+> These media folders are **gitignored** — your photos, voice note and music
+> stay on your machine and are **never pushed**. That's intentional. Anyone who
+> clones the repo gets the empty template, not your private moments.
+
+---
+
+## 3. Deploy on Vercel ▲
+
+Vercel hosts Next.js for free.
+
+**Note:** because photos/music/voice are gitignored, they won't be in your git
+repo — so a plain Git-based Vercel deploy would ship **without** your media. Pick
+one:
+
+### Option A — deploy from your machine (keeps your media, recommended)
+
+Your local media files get uploaded directly, so nothing personal has to live in
+GitHub.
+
+```bash
+npm i -g vercel        # install the Vercel CLI once
+vercel login
+vercel                 # first run: answer the prompts to link a project
+vercel --prod          # deploy to production, uploads your local /public too
+```
+
+### Option B — deploy from GitHub (no media, or add media privately)
+
+1. Push this repo to GitHub (see below).
+2. On [vercel.com](https://vercel.com) → **Add New → Project** → import the repo.
+3. Framework preset auto-detects **Next.js**. No build settings to change.
+4. Click **Deploy**.
+
+Since photos aren't in the repo, either use Option A instead, **or** make the
+GitHub repo **private** and remove the `/public/pics`, `/public/voice`,
+`/public/music/*.mp3` lines from `.gitignore` so your media commits too.
+
+### Environment variables
+
+This project needs **none** to run. If you add any (e.g. an email service for the
+reply box), set them in **Vercel → Project → Settings → Environment Variables**.
+Never commit a `.env` file — `.env*` is gitignored here on purpose.
+
+---
+
+## 4. Push to GitHub
+
+```bash
+git add -A
+git commit -m "Make it mine"
+git push
+```
+
+Your real letters are backed up locally in `personal-content-backup/` (gitignored)
+if you scrubbed them — copy those files back over `lib/` to restore your own
+words at any time.
+
+---
 
 ## The experience (flow)
 
-1. **Lock screen** — a torn-paper card on a soft faded pressed-flower wallpaper.
-   "Welcome, You / a little secret…", a padlock, four dots and a number pad.
-   Enter the 4-digit code (shakes on a wrong code, the lock springs open on the
-   right one).
-2. **The flower portal** — a little letter sits in the centre. Tap it and dozens
-   of watercolour flower heads (cosmos, daisy, lily, hydrangea, sunflower,
-   dahlia, peony) **spiral outward and fill the whole screen**, then **fall away
-   like gravity**, revealing the next page — no reload.
-3. **The vintage envelope** — a kraft watercolour envelope with a painted
-   bluebell sprig and a purple wax seal on crumpled newspaper paper.
-   *Tap to open* → the flap lifts and the letter rises.
-4. **The journey (scroll)** — a short, tender opening letter, then a long
-   scrollable gallery of **scratch-to-reveal** photos of her (each in a vintage
-   maroon frame with its own caption and note), then the **big final letter**
-   with a floating music player and a voice note, and finally a gentle **outro**.
+1. **Lock screen** — torn-paper card on a pressed-flower wallpaper. Enter the code.
+2. **Flower portal** — tap the letter; watercolour flowers spiral out, fill the
+   screen, then fall away like gravity.
+3. **Vintage envelope** — tap to open; the flap lifts and the letter rises.
+4. **The journey** — opening note → scratch-to-reveal photo gallery → the big
+   final letter with music player and voice note → "our story" timeline →
+   "open when…" envelopes → reasons deck → memory map → final question → outro.
 
-Soft procedural piano fades in for the journey; petals drift, sparkles shimmer,
-nothing is ever perfectly still.
-
-## The passcode 🔑
-
-The default code is **`1121`**. Change it (and every line of text) in
-[`lib/content.ts`](lib/content.ts) → `lockCode`.
-
-## Your photos
-
-Her photos live in `public/pics` (`img1…img73`). The gallery, captions and notes
-are generated in [`lib/gallery.ts`](lib/gallery.ts) — edit the `CAPTIONS` /
-`NOTES` pools, or set a specific caption per image in the list.
-
-## Tech
-
-- **Next.js 15** (App Router) + **React 19** + **TypeScript** + **Tailwind CSS**
-- **Framer Motion** for all animation (spring physics, spiral bursts, gravity
-  fall, scroll reveals)
-- **Web Audio API** — fully **procedural** piano, wind, birds, paper, wax and
-  chimes (no audio asset files required)
-- **Original SVG artwork** — `components/art/FlowerHead.tsx` renders eight
-  watercolour flower species parametrically, matched to a warm autumn bouquet
-- Scratch cards use a `<canvas>` (destination-out erasing) that only initialises
-  when scrolled into view, so 70+ photos stay smooth
-
-## Run it
-
-```bash
-npm install
-npm run dev      # http://localhost:3000  (use npm.cmd on Windows PowerShell)
-npm run build    # production build
-npm start        # serve the production build
-```
+Petals drift, sparkles shimmer, nothing is ever perfectly still.
 
 ## Accessibility & performance
 
-- Full `prefers-reduced-motion` support (spirals/scratch collapse to gentle
-  fades and tap-to-reveal)
-- Keyboard-focusable controls with visible focus rings and ARIA labels
-- Transform/opacity-only animations for 60fps; particle & flower counts scale
-  down on mobile
-- Audio is unlocked by the first keypad tap and can be muted any time
+- Full `prefers-reduced-motion` support (spirals/scratch collapse to gentle fades).
+- Keyboard-focusable controls, visible focus rings, ARIA labels.
+- Transform/opacity-only animations for 60fps; particle counts scale down on mobile.
+- Audio unlocks on the first keypad tap and can be muted any time.

@@ -5,11 +5,22 @@ build
 .DS_Store
 *.pem
 npm-debug.log*
-.env*.local
 next-env.d.ts
-.vercel
 *.tsbuildinfo
-.claude
 
+# Vercel / env / editor
 .vercel
 .env*
+.claude
+
+# Personal media — swap in your own; these stay untracked (local files kept)
+/public/pics/*
+/public/voice/*
+/public/sounds/*
+/public/music/*.mp3
+!/public/pics/.gitkeep
+!/public/voice/.gitkeep
+!/public/sounds/.gitkeep
+
+# Local backup of your real (personal) content — never pushed
+/personal-content-backup/
